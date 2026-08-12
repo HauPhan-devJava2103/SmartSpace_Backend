@@ -1,0 +1,27 @@
+server:
+  port: 8989
+
+spring:
+  application:
+    name: SmartSpace
+
+  datasource:
+    url: "jdbc:mysql://localhost:3306/smart_space?createDatabaseIfNotExist=true"
+    driverClassName: "com.mysql.cj.jdbc.Driver"
+    username: root
+    password: ${DB_PASSWORD}
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+  # Redis Config
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+# JWT Config
+jwt:
+  signerKey: ${JWT_SIGNER_KEY}
