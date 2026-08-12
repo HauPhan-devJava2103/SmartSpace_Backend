@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.vn.smart_space.dto.ApiResponse;
 import com.vn.smart_space.dto.request.auth.LoginRequest;
+import com.vn.smart_space.dto.request.auth.RefreshTokenRequest;
 import com.vn.smart_space.dto.response.auth.LoginResponse;
 import com.vn.smart_space.service.auth.IAuthenticationService;
 
@@ -20,32 +21,41 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final IAuthenticationService authenticationService;
+        private final IAuthenticationService authenticationService;
 
-    // 1. Login Basic
-    @PostMapping("/login")
-    public ResponseEntity<ApiResponse> login(@RequestBody @Valid LoginRequest request) {
+        // 1. Login Basic
+        @PostMapping("/login")
+        public ResponseEntity<ApiResponse> login(@RequestBody @Valid LoginRequest request) {
 
-        LoginResponse loginResponse = authenticationService.loginBasic(request);
-        return ResponseEntity.ok(ApiResponse.builder()
-                .data(loginResponse)
-                .message("Login success")
-                .build());
+                LoginResponse loginResponse = authenticationService.loginBasic(request);
+                return ResponseEntity.ok(ApiResponse.builder()
+                                .data(loginResponse)
+                                .message("Login success")
+                                .build());
 
-    }
+        }
 
-    // 2. Refresh Token
-    // @PostMapping("/refresh")
+        // 2. Refresh Token
+        @PostMapping("/refresh")
+        public ResponseEntity<ApiResponse> refresh(
+                        @RequestBody @Valid RefreshTokenRequest request) {
+                LoginResponse loginResponse = authenticationService
+                                .refreshToken(request);
+                return ResponseEntity.ok(ApiResponse.builder()
+                                .data(loginResponse)
+                                .message("Refresh token success")
+                                .build());
+        }
 
-    // 3. Logout
-    @PostMapping("/logout")
-    public ResponseEntity<ApiResponse> logout(@RequestHeader("Authorization") String authHeader) {
-        String token = authHeader.replace("Bearer ", "");
-        authenticationService.logout(token);
-        return ResponseEntity.ok(ApiResponse.builder()
-                .message("Logout success")
-                .build());
+        // 3. Logout
+        @PostMapping("/logout")
+        public ResponseEntity<ApiResponse> logout(@RequestHeader("Authorization") String authHeader) {
+                String token = authHeader.replace("Bearer ", "");
+                authenticationService.logout(token);
+                return ResponseEntity.ok(ApiResponse.builder()
+                                .message("Logout success")
+                                .build());
 
-    }
+        }
 
 }

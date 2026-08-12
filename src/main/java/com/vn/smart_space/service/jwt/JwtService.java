@@ -20,6 +20,7 @@ import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import com.vn.smart_space.dto.JwtInfo;
+import com.vn.smart_space.dto.TokenPayload;
 import com.vn.smart_space.exception.UnauthorizedException;
 import com.vn.smart_space.model.User;
 
@@ -37,20 +38,21 @@ public class JwtService implements IJwtService {
     protected String signerKey;
 
     @Override
-    public String generateAccessToken(User user) {
+    public TokenPayload generateAccessToken(User user) {
         JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
 
         Date issueTime = new Date();
         Date expiryTime = new Date(Instant.ofEpochMilli(issueTime.getTime())
                 .plus(10, ChronoUnit.MINUTES)
                 .toEpochMilli());
+        String jwtId = UUID.randomUUID().toString();
 
         JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
                 .subject(user.getEmail())
                 .issuer("smartspace.vn")
                 .issueTime(issueTime)
                 .expirationTime(expiryTime)
-                .jwtID(UUID.randomUUID().toString())
+                .jwtID(jwtId)
                 .claim("scope", buildScope(user))
                 .claim("userId", user.getId())
                 .claim("tokenType", "access")
@@ -62,7 +64,12 @@ public class JwtService implements IJwtService {
 
         try {
             jwsObject.sign(new MACSigner(signerKey.getBytes()));
-            return jwsObject.serialize();
+            String token = jwsObject.serialize();
+            return TokenPayload.builder()
+                    .token(token)
+                    .jwtId(jwtId)
+                    .expiryTime(expiryTime)
+                    .build();
         } catch (JOSEException e) {
             log.error("Cannot create token", e);
             throw new RuntimeException("Can not generate token", e);
@@ -70,20 +77,21 @@ public class JwtService implements IJwtService {
     }
 
     @Override
-    public String generateRefreshToken(User user) {
+    public TokenPayload generateRefreshToken(User user) {
         JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
 
         Date issueTime = new Date();
         Date expiryTime = new Date(Instant.ofEpochMilli(issueTime.getTime())
                 .plus(7, ChronoUnit.DAYS)
                 .toEpochMilli());
+        String jwtId = UUID.randomUUID().toString();
 
         JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
                 .subject(user.getEmail())
                 .issuer("smartspace.vn")
                 .issueTime(issueTime)
                 .expirationTime(expiryTime)
-                .jwtID(UUID.randomUUID().toString())
+                .jwtID(jwtId)
                 .claim("tokenType", "refresh")
                 .build();
 
@@ -93,7 +101,12 @@ public class JwtService implements IJwtService {
 
         try {
             jwsObject.sign(new MACSigner(signerKey.getBytes()));
-            return jwsObject.serialize();
+            String token = jwsObject.serialize();
+            return TokenPayload.builder()
+                    .token(token)
+                    .jwtId(jwtId)
+                    .expiryTime(expiryTime)
+                    .build();
         } catch (JOSEException e) {
             log.error("Cannot create token", e);
             throw new RuntimeException("Can not generate token", e);

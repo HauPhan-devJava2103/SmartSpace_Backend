@@ -2,12 +2,13 @@ package com.vn.smart_space.service.jwt;
 
 import com.nimbusds.jwt.SignedJWT;
 import com.vn.smart_space.dto.JwtInfo;
+import com.vn.smart_space.dto.TokenPayload;
 import com.vn.smart_space.model.User;
 
 public interface IJwtService {
-    String generateAccessToken(User user);
+    TokenPayload generateAccessToken(User user);
 
-    String generateRefreshToken(User user);
+    TokenPayload generateRefreshToken(User user);
 
     SignedJWT verifyToken(String token);
 
