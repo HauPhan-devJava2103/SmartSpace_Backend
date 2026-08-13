@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.vn.smart_space.dto.ApiResponse;
+import com.vn.smart_space.dto.request.auth.GoogleLoginRequest;
 import com.vn.smart_space.dto.request.auth.LoginRequest;
 import com.vn.smart_space.dto.request.auth.RefreshTokenRequest;
 import com.vn.smart_space.dto.request.auth.RegisterRequest;
@@ -41,7 +42,20 @@ public class AuthController {
 
         }
 
-        // 2. Refresh Token
+        // 2. Login Google
+        @PostMapping("/login/google")
+        public ResponseEntity<ApiResponse> loginGoogle(@RequestBody @Valid GoogleLoginRequest request) {
+
+                LoginResponse loginResponse = authenticationService.loginGoogle(request);
+                return ResponseEntity.ok(ApiResponse.builder()
+                                .success(true)
+                                .data(loginResponse)
+                                .message("Login Google success")
+                                .build());
+
+        }
+
+        // 3. Refresh Token
         @PostMapping("/refresh")
         public ResponseEntity<ApiResponse> refresh(
                         @RequestBody @Valid RefreshTokenRequest request) {
@@ -54,7 +68,7 @@ public class AuthController {
                                 .build());
         }
 
-        // 3. Logout
+        // 4. Logout
         @PostMapping("/logout")
         public ResponseEntity<ApiResponse> logout(@RequestHeader("Authorization") String authHeader) {
                 String token = authHeader.replace("Bearer ", "");
@@ -63,7 +77,7 @@ public class AuthController {
 
         }
 
-        // 4. Register
+        // 5. Register
         @PostMapping("/register")
         public ResponseEntity<ApiResponse> register(@RequestBody @Valid RegisterRequest request) {
 
@@ -72,14 +86,14 @@ public class AuthController {
 
         }
 
-        // 5. Send OTP
+        // 6. Send OTP
         @PostMapping("/send-otp")
         public ResponseEntity<ApiResponse> sendOtp(@RequestBody @Valid SendOtpRequest request) {
                 authenticationService.sendOtp(request);
                 return ResponseEntity.ok(ApiResponse.success("Send OTP successfully", null));
         }
 
-        // 6. Reset Password
+        // 7. Reset Password
         @PostMapping("/reset-password")
         public ResponseEntity<ApiResponse> resetPassword(@RequestBody @Valid ResetPasswordRequest request) {
                 userService.resetPassword(request);

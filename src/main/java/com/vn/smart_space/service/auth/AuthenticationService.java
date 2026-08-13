@@ -1,10 +1,15 @@
 package com.vn.smart_space.service.auth;
 
+import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.text.ParseException;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Value;
 
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -13,11 +18,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.nimbusds.jwt.SignedJWT;
 import com.vn.smart_space.consts.EOtpPurpose;
+import com.vn.smart_space.consts.ERole;
+import com.vn.smart_space.consts.EUserStatus;
 import com.vn.smart_space.dto.JwtInfo;
 import com.vn.smart_space.dto.TokenPayload;
 import com.vn.smart_space.dto.request.auth.IntrospectRequest;
 import com.vn.smart_space.dto.request.auth.LoginRequest;
 import com.vn.smart_space.dto.request.auth.RefreshTokenRequest;
+import com.vn.smart_space.dto.request.auth.GoogleLoginRequest;
 import com.vn.smart_space.dto.request.auth.SendOtpRequest;
 import com.vn.smart_space.dto.response.IntrospectResponse;
 import com.vn.smart_space.dto.response.auth.LoginResponse;
@@ -25,6 +33,10 @@ import com.vn.smart_space.exception.BadRequestException;
 import com.vn.smart_space.exception.UnauthorizedException;
 import com.vn.smart_space.model.InvalidatedToken;
 import com.vn.smart_space.model.User;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
 import com.vn.smart_space.repository.InvalidatedTokenRepository;
 import com.vn.smart_space.repository.UserRepository;
 import com.vn.smart_space.service.jwt.IJwtService;
@@ -45,6 +57,9 @@ public class AuthenticationService implements IAuthenticationService {
     private final PasswordEncoder passwordEncoder;
 
     private final StringRedisTemplate stringRedisTemplate;
+
+    @Value("${google.client-id}")
+    private String googleClientId;
 
     private static final String REFRESH_TOKEN_PREFIX = "refresh_token:";
 
@@ -85,6 +100,55 @@ public class AuthenticationService implements IAuthenticationService {
         TokenPayload accessToken = jwtService.generateAccessToken(user);
         TokenPayload refreshToken = jwtService.generateRefreshToken(user);
 
+        saveRefreshTokenToRedis(user.getId(), refreshToken);
+
+        return LoginResponse.builder()
+                .accessToken(accessToken.getToken())
+                .refreshToken(refreshToken.getToken())
+                .build();
+    }
+
+    // Login Google
+    @Override
+    @Transactional
+    public LoginResponse loginGoogle(GoogleLoginRequest request) {
+        // Verify Google ID Token
+        GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(),
+                GsonFactory.getDefaultInstance())
+                .setAudience(Collections.singletonList(googleClientId))
+                .build();
+
+        GoogleIdToken idToken;
+        try {
+            idToken = verifier.verify(request.getIdToken());
+        } catch (GeneralSecurityException | IOException e) {
+            throw new BadRequestException("Google token không hợp lệ");
+        }
+
+        if (idToken == null) {
+            throw new BadRequestException("Google token không hợp lệ hoặc đã hết hạn");
+        }
+
+        // Extract info user
+        GoogleIdToken.Payload payload = idToken.getPayload();
+        String email = payload.getEmail();
+        String fullName = (String) payload.get("name");
+
+        // Find or create User
+        User user = userRepository.findByEmail(email)
+                .orElseGet(() -> {
+                    User newUser = User.builder()
+                            .email(email)
+                            .fullName(fullName != null ? fullName : email.split("@")[0])
+                            .role(ERole.USER)
+                            .status(EUserStatus.ACTIVE)
+                            .build();
+                    return userRepository.save(newUser);
+                });
+
+        // Generate JWT tokens
+        TokenPayload accessToken = jwtService.generateAccessToken(user);
+        TokenPayload refreshToken = jwtService.generateRefreshToken(user);
         saveRefreshTokenToRedis(user.getId(), refreshToken);
 
         return LoginResponse.builder()

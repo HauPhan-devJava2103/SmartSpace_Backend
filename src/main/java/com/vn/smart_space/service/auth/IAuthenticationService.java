@@ -2,6 +2,7 @@ package com.vn.smart_space.service.auth;
 
 import com.vn.smart_space.consts.EOtpPurpose;
 import com.vn.smart_space.dto.TokenPayload;
+import com.vn.smart_space.dto.request.auth.GoogleLoginRequest;
 import com.vn.smart_space.dto.request.auth.IntrospectRequest;
 import com.vn.smart_space.dto.request.auth.LoginRequest;
 import com.vn.smart_space.dto.request.auth.RefreshTokenRequest;
@@ -16,6 +17,9 @@ public interface IAuthenticationService {
 
     // Login Basic
     LoginResponse loginBasic(LoginRequest request);
+
+    // Login Google
+    LoginResponse loginGoogle(GoogleLoginRequest request);
 
     // Refresh Token
     LoginResponse refreshToken(RefreshTokenRequest request);

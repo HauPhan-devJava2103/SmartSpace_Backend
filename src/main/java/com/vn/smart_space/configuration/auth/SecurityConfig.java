@@ -19,6 +19,7 @@ public class SecurityConfig {
 
     private static final String[] PUBLIC_ENDPOINTS = {
             "/auth/login",
+            "/auth/login/google",
             "/auth/refresh",
             "/auth/register",
             "/auth/send-otp",
