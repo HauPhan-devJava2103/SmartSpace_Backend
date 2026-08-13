@@ -18,11 +18,11 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     private static final String[] PUBLIC_ENDPOINTS = {
-            "/login", "/login/google",
-            "/auth/login", "/auth/refresh",
-            "/otps/request",
-            "/register",
-            "/reset-password"
+            "/auth/login",
+            "/auth/refresh",
+            "/auth/register",
+            "/auth/send-otp",
+            "/auth/reset-password"
     };
     private final CustomJwtDecoder customJwtDecoder;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
