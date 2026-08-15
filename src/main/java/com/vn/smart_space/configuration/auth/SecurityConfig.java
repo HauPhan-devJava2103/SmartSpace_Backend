@@ -20,10 +20,10 @@ public class SecurityConfig {
     private static final String[] PUBLIC_ENDPOINTS = {
             "/auth/login",
             "/auth/login/google",
-            "/auth/refresh",
+            "/auth/refresh-token",
             "/auth/register",
-            "/auth/send-otp",
-            "/auth/reset-password"
+            "/auth/send-otp-register",
+            "/auth/verify-otp-register"
     };
     private final CustomJwtDecoder customJwtDecoder;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
