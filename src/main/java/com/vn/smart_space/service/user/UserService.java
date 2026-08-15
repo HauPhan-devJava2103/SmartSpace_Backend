@@ -41,14 +41,14 @@ public class UserService implements IUserService {
         if (!request.getPassword().equals(request.getConfirmPassword())) {
             throw new BadRequestException("Mật khẩu xác nhận không khớp");
         }
-        authenticationService.verifyOtp(request.getEmail(), request.getOtp(), EOtpPurpose.REGISTER,
+        authenticationService.verifyOtp(request.getEmail(), request.getOtp(), EOtpPurpose.register,
                 request.getOtpPurpose());
 
         User user = User.builder()
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .role(ERole.USER)
-                .status(EUserStatus.ACTIVE)
+                .role(ERole.client)
+                .status(EUserStatus.active)
                 .fullName(request.getEmail().split("@")[0])
                 .build();
 
@@ -88,7 +88,7 @@ public class UserService implements IUserService {
 
         User user = findUserByEmail(request.getEmail());
         authenticationService.verifyOtp(request.getEmail(), request.getOtp(),
-                EOtpPurpose.FORGOT_PASSWORD, request.getOtpPurpose());
+                EOtpPurpose.forgot_password, request.getOtpPurpose());
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);

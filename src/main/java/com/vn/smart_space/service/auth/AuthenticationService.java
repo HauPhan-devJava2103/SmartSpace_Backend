@@ -10,22 +10,25 @@ import java.util.Date;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
-
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
 import com.nimbusds.jwt.SignedJWT;
 import com.vn.smart_space.consts.EOtpPurpose;
 import com.vn.smart_space.consts.ERole;
 import com.vn.smart_space.consts.EUserStatus;
 import com.vn.smart_space.dto.JwtInfo;
 import com.vn.smart_space.dto.TokenPayload;
+import com.vn.smart_space.dto.request.auth.GoogleLoginRequest;
 import com.vn.smart_space.dto.request.auth.IntrospectRequest;
 import com.vn.smart_space.dto.request.auth.LoginRequest;
 import com.vn.smart_space.dto.request.auth.RefreshTokenRequest;
-import com.vn.smart_space.dto.request.auth.GoogleLoginRequest;
 import com.vn.smart_space.dto.request.auth.SendOtpRequest;
 import com.vn.smart_space.dto.response.IntrospectResponse;
 import com.vn.smart_space.dto.response.auth.LoginResponse;
@@ -33,10 +36,6 @@ import com.vn.smart_space.exception.BadRequestException;
 import com.vn.smart_space.exception.UnauthorizedException;
 import com.vn.smart_space.model.InvalidatedToken;
 import com.vn.smart_space.model.User;
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
-import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.client.json.gson.GsonFactory;
 import com.vn.smart_space.repository.InvalidatedTokenRepository;
 import com.vn.smart_space.repository.UserRepository;
 import com.vn.smart_space.service.jwt.IJwtService;
@@ -140,8 +139,8 @@ public class AuthenticationService implements IAuthenticationService {
                     User newUser = User.builder()
                             .email(email)
                             .fullName(fullName != null ? fullName : email.split("@")[0])
-                            .role(ERole.USER)
-                            .status(EUserStatus.ACTIVE)
+                            .role(ERole.client)
+                            .status(EUserStatus.active)
                             .build();
                     return userRepository.save(newUser);
                 });
@@ -236,11 +235,11 @@ public class AuthenticationService implements IAuthenticationService {
         String email = request.getEmail();
         EOtpPurpose purpose = request.getPurpose();
 
-        if (purpose == EOtpPurpose.FORGOT_PASSWORD) {
+        if (purpose == EOtpPurpose.forgot_password) {
             userRepository.findByEmail(email)
                     .orElseThrow(() -> new BadRequestException("Email không tồn tại trong hệ thống"));
         }
-        if (purpose == EOtpPurpose.REGISTER && userRepository.findByEmail(email).isPresent()) {
+        if (purpose == EOtpPurpose.register && userRepository.findByEmail(email).isPresent()) {
             throw new BadRequestException("Email đã tồn tại trong hệ thống");
         }
 
