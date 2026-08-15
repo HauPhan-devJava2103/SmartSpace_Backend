@@ -1,7 +1,5 @@
 package com.vn.smart_space.dto.request.auth;
 
-import com.vn.smart_space.consts.EOtpPurpose;
-import com.vn.smart_space.validation.EnumValue;
 import com.vn.smart_space.validation.StrongPassword;
 
 import jakarta.validation.constraints.Email;
@@ -20,9 +18,6 @@ public class ResetPasswordRequest {
     @NotBlank(message = "OTP không được để trống")
     @Size(min = 6, max = 6, message = "OTP phải có 6 chữ số")
     private String otp;
-
-    @EnumValue(enumClass = EOtpPurpose.class)
-    private EOtpPurpose otpPurpose;
 
     @NotBlank(message = "Mật khẩu mới không được để trống")
     @Size(min = 6, message = "Mật khẩu phải có ít nhất 6 ký tự")
