@@ -68,7 +68,9 @@ public class UserService implements IUserService {
 
         // Login
         TokenPayload accessToken = jwtService.generateAccessToken(user);
-        TokenPayload refreshToken = jwtService.generateRefreshToken(user);
+
+        boolean rememberMe = Boolean.TRUE.equals(request.getRememberMe());
+        TokenPayload refreshToken = jwtService.generateRefreshToken(user, rememberMe);
 
         authenticationService.saveRefreshTokenToRedis(user.getId(), refreshToken);
 

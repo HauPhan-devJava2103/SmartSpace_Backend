@@ -97,9 +97,12 @@ public class AuthenticationService implements IAuthenticationService {
             throw new BadRequestException("Email hoặc mật khẩu không chính xác");
         }
 
-        // Generate Token
+        // Generate Access Token
         TokenPayload accessToken = jwtService.generateAccessToken(user);
-        TokenPayload refreshToken = jwtService.generateRefreshToken(user);
+
+        // Generate Refresh Token
+        boolean rememberMe = Boolean.TRUE.equals(request.getRememberMe());
+        TokenPayload refreshToken = jwtService.generateRefreshToken(user, rememberMe);
 
         saveRefreshTokenToRedis(user.getId(), refreshToken);
 
@@ -151,7 +154,7 @@ public class AuthenticationService implements IAuthenticationService {
 
         // Generate JWT tokens
         TokenPayload accessToken = jwtService.generateAccessToken(user);
-        TokenPayload refreshToken = jwtService.generateRefreshToken(user);
+        TokenPayload refreshToken = jwtService.generateRefreshToken(user, true);
         saveRefreshTokenToRedis(user.getId(), refreshToken);
 
         return LoginResponse.builder()
@@ -221,13 +224,18 @@ public class AuthenticationService implements IAuthenticationService {
             }
             TokenPayload newAccessToken = jwtService
                     .generateAccessToken(user);
+
+            Boolean rememberMe = (Boolean) signedJWT.getJWTClaimsSet().getClaim("rememberMe");
+            boolean isRememberMe = Boolean.TRUE.equals(rememberMe);
             TokenPayload newRefreshToken = jwtService
-                    .generateRefreshToken(user);
+                    .generateRefreshToken(user, isRememberMe);
 
             saveRefreshTokenToRedis(user.getId(), newRefreshToken);
             return LoginResponse.builder()
                     .accessToken(newAccessToken.getToken())
                     .refreshToken(newRefreshToken.getToken())
+                    .registrationStatus(determineRegistrationStatus(user))
+                    .user(userMapper.toUserResponse(user))
                     .build();
         } catch (ParseException e) {
             throw new UnauthorizedException("Token không hợp lệ");
