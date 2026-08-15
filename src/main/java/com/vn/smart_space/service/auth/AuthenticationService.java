@@ -2,7 +2,6 @@ package com.vn.smart_space.service.auth;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.security.SecureRandom;
 import java.text.ParseException;
 import java.time.Duration;
 import java.util.Collections;
@@ -20,7 +19,7 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
 import com.nimbusds.jwt.SignedJWT;
-import com.vn.smart_space.consts.EOtpPurpose;
+import com.vn.smart_space.consts.ERegistrationStatus;
 import com.vn.smart_space.consts.ERole;
 import com.vn.smart_space.consts.EUserStatus;
 import com.vn.smart_space.dto.JwtInfo;
@@ -29,17 +28,18 @@ import com.vn.smart_space.dto.request.auth.GoogleLoginRequest;
 import com.vn.smart_space.dto.request.auth.IntrospectRequest;
 import com.vn.smart_space.dto.request.auth.LoginRequest;
 import com.vn.smart_space.dto.request.auth.RefreshTokenRequest;
-import com.vn.smart_space.dto.request.auth.SendOtpRequest;
 import com.vn.smart_space.dto.response.IntrospectResponse;
 import com.vn.smart_space.dto.response.auth.LoginResponse;
 import com.vn.smart_space.exception.BadRequestException;
 import com.vn.smart_space.exception.UnauthorizedException;
+import com.vn.smart_space.mapper.UserMapper;
 import com.vn.smart_space.model.InvalidatedToken;
 import com.vn.smart_space.model.User;
 import com.vn.smart_space.repository.InvalidatedTokenRepository;
 import com.vn.smart_space.repository.UserRepository;
 import com.vn.smart_space.service.jwt.IJwtService;
 import com.vn.smart_space.service.mail.IMailService;
+import com.vn.smart_space.utils.OtpGenerator;
 
 import lombok.RequiredArgsConstructor;
 
@@ -56,6 +56,8 @@ public class AuthenticationService implements IAuthenticationService {
     private final PasswordEncoder passwordEncoder;
 
     private final StringRedisTemplate stringRedisTemplate;
+
+    private final UserMapper userMapper;
 
     @Value("${google.client-id}")
     private String googleClientId;
@@ -104,6 +106,8 @@ public class AuthenticationService implements IAuthenticationService {
         return LoginResponse.builder()
                 .accessToken(accessToken.getToken())
                 .refreshToken(refreshToken.getToken())
+                .registrationStatus(determineRegistrationStatus(user))
+                .user(userMapper.toUserResponse(user))
                 .build();
     }
 
@@ -153,6 +157,8 @@ public class AuthenticationService implements IAuthenticationService {
         return LoginResponse.builder()
                 .accessToken(accessToken.getToken())
                 .refreshToken(refreshToken.getToken())
+                .registrationStatus(determineRegistrationStatus(user))
+                .user(userMapper.toUserResponse(user))
                 .build();
     }
 
@@ -189,7 +195,7 @@ public class AuthenticationService implements IAuthenticationService {
     @Override
     @Transactional
     public LoginResponse refreshToken(RefreshTokenRequest request) {
-        String refreshToken = request.getToken();
+        String refreshToken = request.getRefreshToken();
 
         SignedJWT signedJWT = jwtService.verifyToken(refreshToken);
         try {
@@ -228,18 +234,11 @@ public class AuthenticationService implements IAuthenticationService {
         }
     }
 
-    // Send OTP
+    // SEND OTP FOR REGISTRATION
     @Override
     @Transactional
-    public void sendOtp(SendOtpRequest request) {
-        String email = request.getEmail();
-        EOtpPurpose purpose = request.getPurpose();
-
-        if (purpose == EOtpPurpose.forgot_password) {
-            userRepository.findByEmail(email)
-                    .orElseThrow(() -> new BadRequestException("Email không tồn tại trong hệ thống"));
-        }
-        if (purpose == EOtpPurpose.register && userRepository.findByEmail(email).isPresent()) {
+    public void sendOtpRegister(String email) {
+        if (userRepository.findByEmail(email).isPresent()) {
             throw new BadRequestException("Email đã tồn tại trong hệ thống");
         }
 
@@ -249,15 +248,13 @@ public class AuthenticationService implements IAuthenticationService {
             throw new BadRequestException("Vui lòng đợi 60 giây trước khi gửi lại OTP");
         }
 
-        // Generate OTP
-        String otp = String.format("%06d", new SecureRandom().nextInt(1_000_000));
+        String otp = OtpGenerator.generateOtp();
 
-        // Save OTP to Redis Hash
-        String otpKey = "otp:" + email;
+        // Save Redis
+        String otpKey = "otp:register:" + email;
         Map<String, String> otpData = Map.of(
                 "otp", otp,
-                "attempts", "0",
-                "purpose", purpose.name());
+                "attempts", "0");
         stringRedisTemplate.opsForHash().putAll(otpKey, otpData);
         stringRedisTemplate.expire(otpKey, Duration.ofMinutes(5));
 
@@ -266,6 +263,19 @@ public class AuthenticationService implements IAuthenticationService {
 
         // Send OTP email
         mailService.sendOtpEmail(email, otp);
+
+    }
+
+    @Override
+    @Transactional
+    public void verifyOtpRegister(String email, String otp) {
+
+        String otpKey = "otp:register:" + email;
+        verifyOtp(otpKey, otp);
+
+        String verifiedKey = "otp_verified:register:" + email;
+        stringRedisTemplate.opsForValue().set(verifiedKey, "true", Duration.ofMinutes(10));
+
     }
 
     @Override
@@ -280,11 +290,14 @@ public class AuthenticationService implements IAuthenticationService {
     }
 
     @Override
-    public void verifyOtp(String email, String inputOtp, EOtpPurpose expectedPurpose, EOtpPurpose actualPurpose) {
-        if (actualPurpose != expectedPurpose) {
-            throw new BadRequestException("Mục đích sử dụng OTP không hợp lệ");
+    public ERegistrationStatus determineRegistrationStatus(User user) {
+        if (user.getPhone() != null && !user.getPhone().isBlank()) {
+            return ERegistrationStatus.complete;
         }
-        String otpKey = "otp:" + email;
+        return ERegistrationStatus.incomplete;
+    }
+
+    private void verifyOtp(String otpKey, String otp) {
         // Check OTP is exists
         Boolean exists = stringRedisTemplate.hasKey(otpKey);
 
@@ -316,7 +329,7 @@ public class AuthenticationService implements IAuthenticationService {
         }
 
         // OTP Not Match
-        if (!savedOtp.equals(inputOtp)) {
+        if (!savedOtp.equals(otp)) {
 
             Long newAttempts = stringRedisTemplate
                     .opsForHash()

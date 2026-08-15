@@ -10,10 +10,11 @@ import org.springframework.web.bind.annotation.RestController;
 import com.vn.smart_space.dto.ApiResponse;
 import com.vn.smart_space.dto.request.auth.GoogleLoginRequest;
 import com.vn.smart_space.dto.request.auth.LoginRequest;
+import com.vn.smart_space.dto.request.auth.OtpRegisterRequest;
 import com.vn.smart_space.dto.request.auth.RefreshTokenRequest;
 import com.vn.smart_space.dto.request.auth.RegisterRequest;
 import com.vn.smart_space.dto.request.auth.ResetPasswordRequest;
-import com.vn.smart_space.dto.request.auth.SendOtpRequest;
+import com.vn.smart_space.dto.request.auth.VerifyOTPRegisterRequest;
 import com.vn.smart_space.dto.response.auth.LoginResponse;
 import com.vn.smart_space.service.auth.IAuthenticationService;
 import com.vn.smart_space.service.user.IUserService;
@@ -56,7 +57,7 @@ public class AuthController {
         }
 
         // 3. Refresh Token
-        @PostMapping("/refresh")
+        @PostMapping("/refresh-token")
         public ResponseEntity<ApiResponse> refresh(
                         @RequestBody @Valid RefreshTokenRequest request) {
                 LoginResponse loginResponse = authenticationService
@@ -86,11 +87,18 @@ public class AuthController {
 
         }
 
-        // 6. Send OTP
-        @PostMapping("/send-otp")
-        public ResponseEntity<ApiResponse> sendOtp(@RequestBody @Valid SendOtpRequest request) {
-                authenticationService.sendOtp(request);
-                return ResponseEntity.ok(ApiResponse.success("Send OTP successfully", null));
+        // 6. API FOR REGISTER PROCESS
+        @PostMapping("/send-otp-register")
+        public ResponseEntity<ApiResponse> sendOtpRegister(@RequestBody @Valid OtpRegisterRequest request) {
+
+                authenticationService.sendOtpRegister(request.getEmail());
+                return ResponseEntity.ok(ApiResponse.success("Send OTP register successfully", null));
+        }
+
+        @PostMapping("/verify-otp-register")
+        public ResponseEntity<ApiResponse> verifyOtpRegister(@RequestBody @Valid VerifyOTPRegisterRequest request) {
+                authenticationService.verifyOtpRegister(request.getEmail(), request.getOtp());
+                return ResponseEntity.ok(ApiResponse.success("Verify OTP register successfully", null));
         }
 
         // 7. Reset Password

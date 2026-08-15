@@ -1,10 +1,11 @@
 package com.vn.smart_space.service.user;
 
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.vn.smart_space.consts.EOtpPurpose;
+import com.vn.smart_space.consts.ERegistrationStatus;
 import com.vn.smart_space.consts.ERole;
 import com.vn.smart_space.consts.EUserStatus;
 import com.vn.smart_space.dto.TokenPayload;
@@ -12,6 +13,7 @@ import com.vn.smart_space.dto.request.auth.RegisterRequest;
 import com.vn.smart_space.dto.request.auth.ResetPasswordRequest;
 import com.vn.smart_space.dto.response.auth.LoginResponse;
 import com.vn.smart_space.exception.BadRequestException;
+import com.vn.smart_space.mapper.UserMapper;
 import com.vn.smart_space.model.User;
 import com.vn.smart_space.repository.UserRepository;
 import com.vn.smart_space.service.auth.IAuthenticationService;
@@ -29,6 +31,10 @@ public class UserService implements IUserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
+    private final StringRedisTemplate stringRedisTemplate;
+
+    private final UserMapper userMapper;
+
     // Create New User
     @Override
     @Transactional
@@ -41,8 +47,14 @@ public class UserService implements IUserService {
         if (!request.getPassword().equals(request.getConfirmPassword())) {
             throw new BadRequestException("Mật khẩu xác nhận không khớp");
         }
-        authenticationService.verifyOtp(request.getEmail(), request.getOtp(), EOtpPurpose.register,
-                request.getOtpPurpose());
+
+        // Check OTP is verified
+        String verifiedKey = "otp_verified:register:" + request.getEmail();
+        String verified = stringRedisTemplate.opsForValue().get(verifiedKey);
+        if (!"true".equals(verified)) {
+            throw new BadRequestException("Email chưa được xác thực OTP");
+        }
+        stringRedisTemplate.delete(verifiedKey);
 
         User user = User.builder()
                 .email(request.getEmail())
@@ -63,6 +75,8 @@ public class UserService implements IUserService {
         return LoginResponse.builder()
                 .accessToken(accessToken.getToken())
                 .refreshToken(refreshToken.getToken())
+                .registrationStatus(ERegistrationStatus.incomplete)
+                .user(userMapper.toUserResponse(user))
                 .build();
 
     }
@@ -87,8 +101,6 @@ public class UserService implements IUserService {
         }
 
         User user = findUserByEmail(request.getEmail());
-        authenticationService.verifyOtp(request.getEmail(), request.getOtp(),
-                EOtpPurpose.forgot_password, request.getOtpPurpose());
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);

@@ -5,20 +5,19 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
 @Getter
+@Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class LoginRequest {
+public class VerifyOTPRegisterRequest {
 
     @NotBlank(message = "Email is required")
     @Email(message = "Email is invalid")
     String email;
 
-    @NotBlank(message = "Password is required")
-    @Size(min = 6, max = 50, message = "Password must be between 6 and 50 characters")
-    String password;
-
-    Boolean rememberMe;
-
+    @NotBlank(message = "OTP is required")
+    @Size(min = 6, max = 6, message = "OTP must be 6 digits")
+    String otp;
 }
