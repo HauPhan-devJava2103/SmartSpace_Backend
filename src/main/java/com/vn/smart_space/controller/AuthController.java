@@ -1,7 +1,10 @@
 package com.vn.smart_space.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,7 +18,9 @@ import com.vn.smart_space.dto.request.auth.RefreshTokenRequest;
 import com.vn.smart_space.dto.request.auth.RegisterRequest;
 import com.vn.smart_space.dto.request.auth.ResetPasswordRequest;
 import com.vn.smart_space.dto.request.auth.VerifyOTPRegisterRequest;
+import com.vn.smart_space.dto.request.user.UpdateProfileRequest;
 import com.vn.smart_space.dto.response.auth.LoginResponse;
+import com.vn.smart_space.dto.response.user.UserResponse;
 import com.vn.smart_space.service.auth.IAuthenticationService;
 import com.vn.smart_space.service.user.IUserService;
 
@@ -106,6 +111,15 @@ public class AuthController {
         public ResponseEntity<ApiResponse> resetPassword(@RequestBody @Valid ResetPasswordRequest request) {
                 userService.resetPassword(request);
                 return ResponseEntity.ok(ApiResponse.success("Reset password successfully", null));
+        }
+
+        // 8. Update Profile
+        @PutMapping("/update-profile")
+        public ResponseEntity<ApiResponse> updateProfile(
+                        @AuthenticationPrincipal Jwt jwt,
+                        @RequestBody @Valid UpdateProfileRequest request) {
+                UserResponse userResponse = userService.updateProfile(jwt.getSubject(), request);
+                return ResponseEntity.ok(ApiResponse.success("Profile updated successfully", userResponse));
         }
 
 }

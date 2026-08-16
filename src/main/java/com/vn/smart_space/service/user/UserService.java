@@ -11,7 +11,9 @@ import com.vn.smart_space.consts.EUserStatus;
 import com.vn.smart_space.dto.TokenPayload;
 import com.vn.smart_space.dto.request.auth.RegisterRequest;
 import com.vn.smart_space.dto.request.auth.ResetPasswordRequest;
+import com.vn.smart_space.dto.request.user.UpdateProfileRequest;
 import com.vn.smart_space.dto.response.auth.LoginResponse;
+import com.vn.smart_space.dto.response.user.UserResponse;
 import com.vn.smart_space.exception.BadRequestException;
 import com.vn.smart_space.mapper.UserMapper;
 import com.vn.smart_space.model.User;
@@ -107,6 +109,22 @@ public class UserService implements IUserService {
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
 
+    }
+
+    // Update Profile
+    @Override
+    @Transactional
+    public UserResponse updateProfile(String email, UpdateProfileRequest request) {
+        User user = findUserByEmail(email);
+
+        user.setFullName(request.getFullName());
+        user.setPhone(request.getPhone());
+        if (request.getAvatarUrl() != null) {
+            user.setAvatarUrl(request.getAvatarUrl());
+        }
+
+        userRepository.save(user);
+        return userMapper.toUserResponse(user);
     }
 
 }
