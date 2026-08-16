@@ -249,29 +249,16 @@ public class AuthenticationService implements IAuthenticationService {
         if (userRepository.findByEmail(email).isPresent()) {
             throw new BadRequestException("Email đã tồn tại trong hệ thống");
         }
+        sendOtp(email, "otp:register:", "cooldown:otp:");
+    }
 
-        // Rate Limit
-        String cooldownKey = "cooldown:otp:" + email;
-        if (Boolean.TRUE.equals(stringRedisTemplate.hasKey(cooldownKey))) {
-            throw new BadRequestException("Vui lòng đợi 60 giây trước khi gửi lại OTP");
+    // Send OTP Forgot password
+    @Override
+    public void sendOtpForgotPassword(String email) {
+        if (userRepository.findByEmail(email).isEmpty()) {
+            throw new BadRequestException("Email không tồn tại trong hệ thống");
         }
-
-        String otp = OtpGenerator.generateOtp();
-
-        // Save Redis
-        String otpKey = "otp:register:" + email;
-        Map<String, String> otpData = Map.of(
-                "otp", otp,
-                "attempts", "0");
-        stringRedisTemplate.opsForHash().putAll(otpKey, otpData);
-        stringRedisTemplate.expire(otpKey, Duration.ofMinutes(5));
-
-        // Set cooldown 60s
-        stringRedisTemplate.opsForValue().set(cooldownKey, "1", Duration.ofSeconds(60));
-
-        // Send OTP email
-        mailService.sendOtpEmail(email, otp);
-
+        sendOtp(email, "otp:forgot_password:", "cooldown:otp_forgot:");
     }
 
     @Override
@@ -284,6 +271,11 @@ public class AuthenticationService implements IAuthenticationService {
         String verifiedKey = "otp_verified:register:" + email;
         stringRedisTemplate.opsForValue().set(verifiedKey, "true", Duration.ofMinutes(10));
 
+    }
+
+    @Override
+    public void verifyOtpForgotPassword(String otpKey, String otp) {
+        verifyOtp(otpKey, otp);
     }
 
     @Override
@@ -303,6 +295,26 @@ public class AuthenticationService implements IAuthenticationService {
             return ERegistrationStatus.complete;
         }
         return ERegistrationStatus.incomplete;
+    }
+
+    private void sendOtp(String email, String otpKeyPrefix, String cooldownKeyPrefix) {
+        String cooldownKey = cooldownKeyPrefix + email;
+        if (Boolean.TRUE.equals(stringRedisTemplate.hasKey(cooldownKey))) {
+            throw new BadRequestException("Vui lòng đợi 60 giây trước khi gửi lại OTP");
+        }
+
+        String otp = OtpGenerator.generateOtp();
+        // Save OTP to Redis
+        String otpKey = otpKeyPrefix + email;
+        Map<String, String> otpData = Map.of(
+                "otp", otp,
+                "attempts", "0");
+        stringRedisTemplate.opsForHash().putAll(otpKey, otpData);
+        stringRedisTemplate.expire(otpKey, Duration.ofMinutes(5));
+        // Set cooldown 60s
+        stringRedisTemplate.opsForValue().set(cooldownKey, "1", Duration.ofSeconds(60));
+        // Send OTP email
+        mailService.sendOtpEmail(email, otp);
     }
 
     private void verifyOtp(String otpKey, String otp) {

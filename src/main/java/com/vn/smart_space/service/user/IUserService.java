@@ -25,4 +25,3 @@ public interface IUserService {
     UserResponse updateProfile(String email, UpdateProfileRequest request);
 
 }
-

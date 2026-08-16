@@ -107,6 +107,13 @@ public class AuthController {
         }
 
         // 7. Reset Password
+
+        @PostMapping("send-otp-forgot-password")
+        public ResponseEntity<ApiResponse> sendOtpForgotPassword(@RequestBody @Valid OtpRegisterRequest request) {
+                authenticationService.sendOtpForgotPassword(request.getEmail());
+                return ResponseEntity.ok(ApiResponse.success("Send OTP forgot password successfully", null));
+        }
+
         @PostMapping("/reset-password")
         public ResponseEntity<ApiResponse> resetPassword(@RequestBody @Valid ResetPasswordRequest request) {
                 userService.resetPassword(request);

@@ -116,6 +116,9 @@ public class UserService implements IUserService {
 
         User user = findUserByEmail(request.getEmail());
 
+        String otpKey = "otp:forgot_password:" + request.getEmail();
+        authenticationService.verifyOtpForgotPassword(otpKey, request.getOtp());
+
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
 

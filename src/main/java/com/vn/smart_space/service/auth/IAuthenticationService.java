@@ -32,6 +32,11 @@ public interface IAuthenticationService {
 
     void verifyOtpRegister(String email, String otp);
 
+    // OTP for Forgot Password
+    void sendOtpForgotPassword(String email);
+
+    void verifyOtpForgotPassword(String otpKey, String otp);
+
     void saveRefreshTokenToRedis(String userId, TokenPayload refreshToken);
 
     ERegistrationStatus determineRegistrationStatus(User user);

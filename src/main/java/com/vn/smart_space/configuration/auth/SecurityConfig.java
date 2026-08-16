@@ -23,7 +23,9 @@ public class SecurityConfig {
             "/auth/refresh-token",
             "/auth/register",
             "/auth/send-otp-register",
-            "/auth/verify-otp-register"
+            "/auth/verify-otp-register",
+            "/auth/send-otp-forgot-password",
+            "/auth/reset-password"
     };
     private final CustomJwtDecoder customJwtDecoder;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
