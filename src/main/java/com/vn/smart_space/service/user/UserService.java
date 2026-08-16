@@ -58,12 +58,22 @@ public class UserService implements IUserService {
         }
         stringRedisTemplate.delete(verifiedKey);
 
+        // Create Default Avatar
+        String emailPrefix = request.getEmail().split("@")[0];
+
+        String nameAvatar = emailPrefix.length() >= 2
+                ? emailPrefix.substring(0, 2).toUpperCase()
+                : emailPrefix.toUpperCase();
+        String defaultAvatar = "https://ui-avatars.com/api/?name=" + nameAvatar
+                + "&background=6366f1&color=fff&size=200&bold=true&font-size=0.4";
+
         User user = User.builder()
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(ERole.client)
                 .status(EUserStatus.active)
-                .fullName(request.getEmail().split("@")[0])
+                .fullName(emailPrefix)
+                .avatarUrl(defaultAvatar)
                 .build();
 
         userRepository.save(user);
