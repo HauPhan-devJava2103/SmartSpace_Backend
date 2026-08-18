@@ -41,6 +41,9 @@ public class SecurityConfig {
         // 1. Cấu hình các đường dẫn được public và bị khóa
         httpSecurity.authorizeHttpRequests(request -> request
                 .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
+                // WebSocket handshake là HTTP GET → permit riêng
+                // Xác thực thực sự nằm ở JwtChannelInterceptor (tầng STOMP)
+                .requestMatchers("/ws/**", "/ws-sockjs/**").permitAll()
                 .anyRequest().authenticated());
 
         // 2. Cấu hình OAuth2 Resource Server để dùng JWT

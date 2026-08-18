@@ -23,6 +23,7 @@ import com.vn.smart_space.dto.JwtInfo;
 import com.vn.smart_space.dto.TokenPayload;
 import com.vn.smart_space.exception.UnauthorizedException;
 import com.vn.smart_space.model.User;
+import com.vn.smart_space.repository.InvalidatedTokenRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.NonFinal;
@@ -36,6 +37,8 @@ public class JwtService implements IJwtService {
     @NonFinal
     @Value("${jwt.signerKey}")
     protected String signerKey;
+
+    private final InvalidatedTokenRepository invalidatedTokenRepository;
 
     @Override
     public TokenPayload generateAccessToken(User user) {
@@ -158,5 +161,10 @@ public class JwtService implements IJwtService {
         } catch (ParseException e) {
             throw new RuntimeException("Invalid JWT token", e);
         }
+    }
+
+    @Override
+    public boolean isTokenBlacklisted(String jwtId) {
+        return invalidatedTokenRepository.existsById(jwtId);
     }
 }

@@ -16,4 +16,6 @@ public interface IJwtService {
 
     JwtInfo parseToken(String token);
 
+    boolean isTokenBlacklisted(String jwtId);
+
 }
