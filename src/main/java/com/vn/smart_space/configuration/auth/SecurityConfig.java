@@ -41,7 +41,8 @@ public class SecurityConfig {
         // 1. Cấu hình các đường dẫn được public và bị khóa
         httpSecurity.authorizeHttpRequests(request -> request
                 .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
-                .requestMatchers("/ws/**", "/ws-sockjs/**").permitAll()
+                .requestMatchers("/ws/**", "/ws-socketjs/**").permitAll()
+                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                 .anyRequest().authenticated());
 
         // 2. Cấu hình OAuth2 Resource Server để dùng JWT
