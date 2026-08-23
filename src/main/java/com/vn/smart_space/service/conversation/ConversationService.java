@@ -1,4 +1,4 @@
-package com.vn.smart_space.service.websocket;
+package com.vn.smart_space.service.conversation;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -6,11 +6,16 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.vn.smart_space.consts.EConversationType;
-import com.vn.smart_space.dto.request.websocket.CreateConversationRequest;
-import com.vn.smart_space.dto.response.websocket.CreateConversationResponse;
+import com.vn.smart_space.dto.PageResponse;
+import com.vn.smart_space.dto.request.conversation.CreateConversationRequest;
+import com.vn.smart_space.dto.response.conversation.ConversationDetailResponse;
+import com.vn.smart_space.dto.response.conversation.CreateConversationResponse;
 import com.vn.smart_space.mapper.ConversationMapper;
 import com.vn.smart_space.model.Conversation;
 import com.vn.smart_space.model.User;
@@ -87,6 +92,28 @@ public class ConversationService implements IConversationService {
 
         return ConversationMapper.toConversationResponse(creatorId, conversation);
 
+    }
+
+    @Override
+    public PageResponse<ConversationDetailResponse> getMyConversation(String userId, int page, int size) {
+
+        Pageable pageable = PageRequest.of(page - 1, size);
+
+        Page<Conversation> conversationPage = conversationRepository.findAllByUserId(userId, pageable);
+
+        List<Conversation> conversations = conversationPage.getContent();
+
+        List<ConversationDetailResponse> responses = conversations.stream()
+                .map(conversation -> ConversationMapper.toConversationDetailResponse(userId, conversation))
+                .toList();
+
+        return PageResponse.<ConversationDetailResponse>builder()
+                .currentPage(page)
+                .pageSize(pageable.getPageSize())
+                .totalPages(conversationPage.getTotalPages())
+                .totalElements(conversationPage.getTotalElements())
+                .content(responses)
+                .build();
     }
 
 }

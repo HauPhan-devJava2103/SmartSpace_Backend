@@ -1,17 +1,18 @@
-package com.vn.smart_space.controller.websocket;
+package com.vn.smart_space.controller.conversation;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.vn.smart_space.dto.ApiResponse;
-import com.vn.smart_space.dto.request.websocket.CreateConversationRequest;
-import com.vn.smart_space.dto.response.websocket.CreateConversationResponse;
-import com.vn.smart_space.service.websocket.IConversationService;
+import com.vn.smart_space.dto.request.conversation.CreateConversationRequest;
+import com.vn.smart_space.dto.response.conversation.CreateConversationResponse;
+import com.vn.smart_space.service.conversation.IConversationService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +39,13 @@ public class ConversationController {
                 .data(response)
                 .message("Conversation created successfully")
                 .build());
+    }
+
+    // Get My Conversation
+    @GetMapping("/my-conversation")
+    public ResponseEntity<ApiResponse> getMyConversation(@AuthenticationPrincipal Jwt jwt) {
+        return null;
+
     }
 
 }

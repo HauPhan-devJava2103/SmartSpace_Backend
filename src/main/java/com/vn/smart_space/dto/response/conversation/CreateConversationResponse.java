@@ -1,4 +1,4 @@
-package com.vn.smart_space.dto.response.websocket;
+package com.vn.smart_space.dto.response.conversation;
 
 import com.vn.smart_space.consts.EConversationType;
 import lombok.Builder;
