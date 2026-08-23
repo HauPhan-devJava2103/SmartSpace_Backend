@@ -17,6 +17,10 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
+    properties:
+      hibernate:
+        type:
+          json_format_mapper: com.vn.smart_space.configuration.CustomHibernateJsonFormatter
 
   # Redis Config
   data:
