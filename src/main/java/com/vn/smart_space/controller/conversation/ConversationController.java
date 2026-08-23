@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.vn.smart_space.dto.ApiResponse;
@@ -43,9 +44,19 @@ public class ConversationController {
 
     // Get My Conversation
     @GetMapping("/my-conversation")
-    public ResponseEntity<ApiResponse> getMyConversation(@AuthenticationPrincipal Jwt jwt) {
-        return null;
+    public ResponseEntity<ApiResponse> getMyConversation(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestParam(required = false, defaultValue = "1") int page,
+            @RequestParam(required = false, defaultValue = "10") int size) {
 
+        var userId = jwt.getClaim("userId").toString();
+        var data = conversationService.getMyConversation(userId, page, size);
+
+        return ResponseEntity.ok(ApiResponse.builder()
+                .success(true)
+                .data(data)
+                .message("My conversation retrieved successfully")
+                .build());
     }
 
 }
