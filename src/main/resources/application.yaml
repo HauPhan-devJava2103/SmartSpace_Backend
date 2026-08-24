@@ -57,3 +57,6 @@ cloudinary:
   api-key: ${CLOUDINARY_API_KEY}
   api-secret: ${CLOUDINARY_API_SECRET}
   folder: smartspace
+
+firebase:
+  service-account-path: classpath:smart-space-36687-firebase-adminsdk-fbsvc-5c08d9199a.json
