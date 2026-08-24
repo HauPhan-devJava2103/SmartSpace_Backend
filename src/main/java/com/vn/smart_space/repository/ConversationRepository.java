@@ -24,7 +24,7 @@ public interface ConversationRepository extends JpaRepository<Conversation, Stri
     Page<Conversation> findAllByUserId(@Param("userId") String userId, Pageable pageable);
 
     // Check conversation exists and sender is member
-    @Query("SELECT c FROM Conversation " +
+    @Query("SELECT c FROM Conversation c " +
             "WHERE c.id = :conversationId " +
             "AND EXISTS(SELECT p FROM c.participants p WHERE p.user.id = :userId)")
     Optional<Conversation> findByIdAndMember(@Param("conversationId") String conversationId,
