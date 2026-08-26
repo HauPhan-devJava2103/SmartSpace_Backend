@@ -1,4 +1,4 @@
-package com.vn.smart_space.controller;
+package com.vn.smart_space.controller.Auth;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;

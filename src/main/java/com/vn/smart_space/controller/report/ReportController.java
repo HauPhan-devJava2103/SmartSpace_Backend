@@ -1,4 +1,4 @@
-package com.vn.smart_space.controller;
+package com.vn.smart_space.controller.report;
 
 import com.vn.smart_space.dto.ApiResponse;
 import com.vn.smart_space.dto.response.report.ReportResponse;

@@ -1,4 +1,4 @@
-package com.vn.smart_space.controller;
+package com.vn.smart_space.controller.media;
 
 import java.util.Map;
 
