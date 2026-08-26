@@ -1,5 +1,6 @@
 package com.vn.smart_space.service.user;
 
+import com.vn.smart_space.dto.request.auth.DevCreateAccountRequest;
 import com.vn.smart_space.dto.request.auth.RegisterRequest;
 import com.vn.smart_space.dto.request.auth.ResetPasswordRequest;
 import com.vn.smart_space.dto.request.user.UpdateProfileRequest;
@@ -23,5 +24,8 @@ public interface IUserService {
 
     // Update Profile
     UserResponse updateProfile(String email, UpdateProfileRequest request);
+
+    // Dev API: Create user directly
+    void devCreateAccount(DevCreateAccountRequest request);
 
 }

@@ -9,6 +9,8 @@ import com.vn.smart_space.consts.EConversationType;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -38,6 +40,7 @@ public class Conversation {
 
     private String conversationAvatar;
 
+    @Enumerated(EnumType.STRING)
     private EConversationType conversationType;
 
     @Column(name = "participant_hash", unique = true)

@@ -18,10 +18,8 @@ public class NotificationServiceImpl implements INotificationService {
     @Transactional(readOnly = true)
     public NotificationCountResponse getUnreadCount(String userId) {
         long unreadPersonal = notificationRepository.countUnreadPersonalNotifications(userId);
-        long totalBroadcast = notificationRepository.countTotalBroadcastNotifications();
-        long readBroadcast = userNotificationStateRepository.countReadBroadcastNotificationsByUser(userId);
+        long unreadBroadcast = userNotificationStateRepository.countUnreadBroadcastNotificationsByUser(userId);
         
-        long unreadBroadcast = Math.max(0, totalBroadcast - readBroadcast);
         long totalUnread = unreadPersonal + unreadBroadcast;
 
         return NotificationCountResponse.builder()

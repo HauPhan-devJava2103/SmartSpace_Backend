@@ -41,7 +41,7 @@ public class NotificationController {
 
     @GetMapping("/unread-count")
     public ResponseEntity<ApiResponse> getUnreadCount(@AuthenticationPrincipal Jwt jwt) {
-        String userId = jwt.getSubject();
+        String userId = jwt.getClaim("userId").toString();
         NotificationCountResponse response = notificationService.getUnreadCount(userId);
         return ResponseEntity.ok(ApiResponse.success("Success", response));
     }

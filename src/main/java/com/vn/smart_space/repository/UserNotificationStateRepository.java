@@ -7,6 +7,6 @@ import org.springframework.data.repository.query.Param;
 
 public interface UserNotificationStateRepository extends JpaRepository<UserNotificationState, String> {
 
-    @Query("SELECT COUNT(uns) FROM UserNotificationState uns WHERE uns.user.id = :userId AND uns.isRead = true")
-    long countReadBroadcastNotificationsByUser(@Param("userId") String userId);
+    @Query("SELECT COUNT(uns) FROM UserNotificationState uns WHERE uns.user.id = :userId AND uns.isRead = false")
+    long countUnreadBroadcastNotificationsByUser(@Param("userId") String userId);
 }

@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.vn.smart_space.dto.ApiResponse;
+import com.vn.smart_space.dto.request.auth.DevCreateAccountRequest;
 import com.vn.smart_space.dto.request.auth.GoogleLoginRequest;
 import com.vn.smart_space.dto.request.auth.LoginRequest;
 import com.vn.smart_space.dto.request.auth.OtpRegisterRequest;
@@ -128,5 +129,12 @@ public class AuthController {
                 UserResponse userResponse = userService.updateProfile(jwt.getSubject(), request);
                 return ResponseEntity.ok(ApiResponse.success("Profile updated successfully", userResponse));
         }
+
+    // 9. API local: create USER directly without otp
+    @PostMapping("/dev-create-account")
+    public ResponseEntity<ApiResponse> devCreateAccount(@RequestBody @Valid DevCreateAccountRequest request) {
+        userService.devCreateAccount(request);
+        return ResponseEntity.ok(ApiResponse.success("Developer account created successfully", null));
+    }
 
 }

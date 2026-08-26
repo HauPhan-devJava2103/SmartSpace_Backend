@@ -9,6 +9,7 @@ import com.vn.smart_space.consts.ERegistrationStatus;
 import com.vn.smart_space.consts.ERole;
 import com.vn.smart_space.consts.EUserStatus;
 import com.vn.smart_space.dto.TokenPayload;
+import com.vn.smart_space.dto.request.auth.DevCreateAccountRequest;
 import com.vn.smart_space.dto.request.auth.RegisterRequest;
 import com.vn.smart_space.dto.request.auth.ResetPasswordRequest;
 import com.vn.smart_space.dto.request.user.UpdateProfileRequest;
@@ -138,6 +139,41 @@ public class UserService implements IUserService {
 
         userRepository.save(user);
         return userMapper.toUserResponse(user);
+    }
+
+    // Dev API: Create user directly
+    @Override
+    @Transactional
+    public void devCreateAccount(DevCreateAccountRequest request) {
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new BadRequestException("Email already exists");
+        }
+
+        String emailPrefix = request.getEmail().split("@")[0];
+
+        String nameAvatar = emailPrefix.length() >= 2
+                ? emailPrefix.substring(0, 2).toUpperCase()
+                : emailPrefix.toUpperCase();
+        String defaultAvatar = "https://ui-avatars.com/api/?name=" + nameAvatar
+                + "&background=6366f1&color=fff&size=200&bold=true&font-size=0.4";
+
+        ERole role;
+        try {
+            role = ERole.valueOf(request.getRole().toLowerCase());
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException("Invalid role");
+        }
+
+        User user = User.builder()
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .role(role)
+                .status(EUserStatus.active)
+                .fullName(emailPrefix)
+                .avatarUrl(defaultAvatar)
+                .build();
+
+        userRepository.save(user);
     }
 
 }
