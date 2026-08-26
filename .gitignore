@@ -29,8 +29,12 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-### VS Code ###
+### VS Code ##
 .vscode/
 
 ### Environment ###
 .env
+
+### Firebase Service Account ###
+src/main/resources/smart-space-36687-firebase-adminsdk-*.json
+*-firebase-adminsdk-*.json
