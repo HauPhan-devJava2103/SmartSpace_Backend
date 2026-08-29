@@ -1,6 +1,6 @@
-package com.vn.smart_space.model;
+package com.vn.smart_space.consts;
 
-public enum ReportStatus {
+public enum EReportStatus {
     PROCESSED,
     PROCESSING,
     PENDING,

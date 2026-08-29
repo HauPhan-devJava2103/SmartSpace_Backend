@@ -1,5 +1,8 @@
 package com.vn.smart_space.model;
 
+import com.vn.smart_space.consts.EReportSeverity;
+import com.vn.smart_space.consts.EReportStatus;
+
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -31,11 +34,11 @@ public class Report extends AbstractEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "severity", nullable = false)
-    ReportSeverity severity;
+    EReportSeverity severity;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    ReportStatus status;
+    EReportStatus status;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")

@@ -1,4 +1,4 @@
-package com.vn.smart_space.controller.Auth;
+package com.vn.smart_space.controller.auth;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -130,11 +130,11 @@ public class AuthController {
                 return ResponseEntity.ok(ApiResponse.success("Profile updated successfully", userResponse));
         }
 
-    // 9. API local: create USER directly without otp
-    @PostMapping("/dev-create-account")
-    public ResponseEntity<ApiResponse> devCreateAccount(@RequestBody @Valid DevCreateAccountRequest request) {
-        userService.devCreateAccount(request);
-        return ResponseEntity.ok(ApiResponse.success("Developer account created successfully", null));
-    }
+        // 9. API local: create USER directly without otp
+        @PostMapping("/dev-create-account")
+        public ResponseEntity<ApiResponse> devCreateAccount(@RequestBody @Valid DevCreateAccountRequest request) {
+                userService.devCreateAccount(request);
+                return ResponseEntity.ok(ApiResponse.success("Developer account created successfully", null));
+        }
 
 }
