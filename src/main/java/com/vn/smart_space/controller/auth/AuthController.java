@@ -19,6 +19,7 @@ import com.vn.smart_space.dto.request.auth.RefreshTokenRequest;
 import com.vn.smart_space.dto.request.auth.RegisterRequest;
 import com.vn.smart_space.dto.request.auth.ResetPasswordRequest;
 import com.vn.smart_space.dto.request.auth.VerifyOTPRegisterRequest;
+import com.vn.smart_space.dto.request.user.ChangePasswordRequest;
 import com.vn.smart_space.dto.request.user.UpdateProfileRequest;
 import com.vn.smart_space.dto.response.auth.LoginResponse;
 import com.vn.smart_space.dto.response.user.UserResponse;
@@ -135,6 +136,15 @@ public class AuthController {
         public ResponseEntity<ApiResponse> devCreateAccount(@RequestBody @Valid DevCreateAccountRequest request) {
                 userService.devCreateAccount(request);
                 return ResponseEntity.ok(ApiResponse.success("Developer account created successfully", null));
+        }
+
+        // Change Password
+        @PutMapping("/change-password")
+        public ResponseEntity<ApiResponse> changePassword(
+                        @AuthenticationPrincipal Jwt jwt,
+                        @RequestBody @Valid ChangePasswordRequest request) {
+                userService.changePassword(jwt.getSubject(), request);
+                return ResponseEntity.ok(ApiResponse.success("Change password successfully", null));
         }
 
 }

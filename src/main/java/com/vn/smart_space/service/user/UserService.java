@@ -12,6 +12,7 @@ import com.vn.smart_space.dto.TokenPayload;
 import com.vn.smart_space.dto.request.auth.DevCreateAccountRequest;
 import com.vn.smart_space.dto.request.auth.RegisterRequest;
 import com.vn.smart_space.dto.request.auth.ResetPasswordRequest;
+import com.vn.smart_space.dto.request.user.ChangePasswordRequest;
 import com.vn.smart_space.dto.request.user.UpdateProfileRequest;
 import com.vn.smart_space.dto.response.auth.LoginResponse;
 import com.vn.smart_space.dto.response.user.UserResponse;
@@ -174,6 +175,23 @@ public class UserService implements IUserService {
                 .build();
 
         userRepository.save(user);
+    }
+
+    @Override
+    public void changePassword(String email, ChangePasswordRequest request) {
+
+        User user = findUserByEmail(email);
+        if (!passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
+            throw new BadRequestException("Mật khẩu hiện tại không chính xác");
+        }
+
+        if (!request.newPassword().equals(request.confirmPassword())) {
+            throw new BadRequestException("Mật khẩu xác nhận không khớp");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.newPassword()));
+        userRepository.save(user);
+
     }
 
 }
