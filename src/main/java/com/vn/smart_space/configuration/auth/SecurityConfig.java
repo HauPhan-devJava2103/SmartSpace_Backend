@@ -20,9 +20,11 @@ public class SecurityConfig {
     private static final String[] PUBLIC_ENDPOINTS = {
             "/auth/login",
             "/auth/login/google",
-            "/auth/refresh",
+            "/auth/refresh-token",
             "/auth/register",
-            "/auth/send-otp",
+            "/auth/send-otp-register",
+            "/auth/verify-otp-register",
+            "/auth/send-otp-forgot-password",
             "/auth/reset-password"
     };
     private final CustomJwtDecoder customJwtDecoder;
@@ -39,6 +41,8 @@ public class SecurityConfig {
         // 1. Cấu hình các đường dẫn được public và bị khóa
         httpSecurity.authorizeHttpRequests(request -> request
                 .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
+                .requestMatchers("/ws/**", "/ws-socketjs/**").permitAll()
+                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                 .anyRequest().authenticated());
 
         // 2. Cấu hình OAuth2 Resource Server để dùng JWT

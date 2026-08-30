@@ -58,4 +58,7 @@ public class User extends AbstractEntity {
     @Column(name = "status")
     EUserStatus status;
 
+    @Column(name = "avatar_url")
+    String avatarUrl;
+
 }

@@ -19,4 +19,6 @@ public class LoginRequest {
     @Size(min = 6, max = 50, message = "Password must be between 6 and 50 characters")
     String password;
 
+    Boolean rememberMe;
+
 }

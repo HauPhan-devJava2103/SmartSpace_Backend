@@ -23,6 +23,7 @@ import com.vn.smart_space.dto.JwtInfo;
 import com.vn.smart_space.dto.TokenPayload;
 import com.vn.smart_space.exception.UnauthorizedException;
 import com.vn.smart_space.model.User;
+import com.vn.smart_space.repository.InvalidatedTokenRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.NonFinal;
@@ -36,6 +37,8 @@ public class JwtService implements IJwtService {
     @NonFinal
     @Value("${jwt.signerKey}")
     protected String signerKey;
+
+    private final InvalidatedTokenRepository invalidatedTokenRepository;
 
     @Override
     public TokenPayload generateAccessToken(User user) {
@@ -77,12 +80,12 @@ public class JwtService implements IJwtService {
     }
 
     @Override
-    public TokenPayload generateRefreshToken(User user) {
+    public TokenPayload generateRefreshToken(User user, boolean rememberMe) {
         JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
 
         Date issueTime = new Date();
         Date expiryTime = new Date(Instant.ofEpochMilli(issueTime.getTime())
-                .plus(7, ChronoUnit.DAYS)
+                .plus(rememberMe ? 30 : 1, ChronoUnit.DAYS)
                 .toEpochMilli());
         String jwtId = UUID.randomUUID().toString();
 
@@ -93,6 +96,7 @@ public class JwtService implements IJwtService {
                 .expirationTime(expiryTime)
                 .jwtID(jwtId)
                 .claim("tokenType", "refresh")
+                .claim("rememberMe", rememberMe)
                 .build();
 
         Payload payload = new Payload(jwtClaimsSet.toJSONObject());
@@ -157,5 +161,10 @@ public class JwtService implements IJwtService {
         } catch (ParseException e) {
             throw new RuntimeException("Invalid JWT token", e);
         }
+    }
+
+    @Override
+    public boolean isTokenBlacklisted(String jwtId) {
+        return invalidatedTokenRepository.existsById(jwtId);
     }
 }

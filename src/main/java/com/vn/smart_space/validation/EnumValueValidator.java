@@ -24,7 +24,7 @@ public class EnumValueValidator implements ConstraintValidator<EnumValue, Object
             return true;
         }
 
-        String stringValue = (value instanceof Enum) ? ((Enum<?>) value).name() : value.toString();
+        String stringValue = value.toString();
 
         if (acceptedValues.contains(stringValue)) {
             return true;

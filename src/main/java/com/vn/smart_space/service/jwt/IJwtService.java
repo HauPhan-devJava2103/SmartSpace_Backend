@@ -8,12 +8,14 @@ import com.vn.smart_space.model.User;
 public interface IJwtService {
     TokenPayload generateAccessToken(User user);
 
-    TokenPayload generateRefreshToken(User user);
+    TokenPayload generateRefreshToken(User user, boolean rememberMe);
 
     SignedJWT verifyToken(String token);
 
     String buildScope(User user);
 
     JwtInfo parseToken(String token);
+
+    boolean isTokenBlacklisted(String jwtId);
 
 }

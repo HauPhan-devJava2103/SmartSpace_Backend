@@ -2,6 +2,8 @@ server:
   port: 8989
 
 spring:
+  config:
+    import: optional:file:.env[.properties]
   application:
     name: SmartSpace
 
@@ -15,6 +17,10 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
+    properties:
+      hibernate:
+        type:
+          json_format_mapper: com.vn.smart_space.configuration.CustomHibernateJsonFormatter
 
   # Redis Config
   data:
@@ -44,3 +50,13 @@ google:
   client-id: ${GOOGLE_CLIENT_ID}
   client-secret: ${GOOGLE_CLIENT_SECRET}
   redirect-uri: ${GOOGLE_REDIRECT_URI}
+
+# Cloudinary Config
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME}
+  api-key: ${CLOUDINARY_API_KEY}
+  api-secret: ${CLOUDINARY_API_SECRET}
+  folder: smartspace
+
+firebase:
+  service-account-path: classpath:smart-space-36687-firebase-adminsdk-fbsvc-5c08d9199a.json

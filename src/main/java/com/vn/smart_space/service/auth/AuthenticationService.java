@@ -2,7 +2,6 @@ package com.vn.smart_space.service.auth;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.security.SecureRandom;
 import java.text.ParseException;
 import java.time.Duration;
 import java.util.Collections;
@@ -10,37 +9,37 @@ import java.util.Date;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
-
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.nimbusds.jwt.SignedJWT;
-import com.vn.smart_space.consts.EOtpPurpose;
-import com.vn.smart_space.consts.ERole;
-import com.vn.smart_space.consts.EUserStatus;
-import com.vn.smart_space.dto.JwtInfo;
-import com.vn.smart_space.dto.TokenPayload;
-import com.vn.smart_space.dto.request.auth.IntrospectRequest;
-import com.vn.smart_space.dto.request.auth.LoginRequest;
-import com.vn.smart_space.dto.request.auth.RefreshTokenRequest;
-import com.vn.smart_space.dto.request.auth.GoogleLoginRequest;
-import com.vn.smart_space.dto.request.auth.SendOtpRequest;
-import com.vn.smart_space.dto.response.IntrospectResponse;
-import com.vn.smart_space.dto.response.auth.LoginResponse;
-import com.vn.smart_space.exception.BadRequestException;
-import com.vn.smart_space.exception.UnauthorizedException;
-import com.vn.smart_space.model.InvalidatedToken;
-import com.vn.smart_space.model.User;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
+import com.nimbusds.jwt.SignedJWT;
+import com.vn.smart_space.consts.ERegistrationStatus;
+import com.vn.smart_space.consts.ERole;
+import com.vn.smart_space.consts.EUserStatus;
+import com.vn.smart_space.dto.JwtInfo;
+import com.vn.smart_space.dto.TokenPayload;
+import com.vn.smart_space.dto.request.auth.GoogleLoginRequest;
+import com.vn.smart_space.dto.request.auth.IntrospectRequest;
+import com.vn.smart_space.dto.request.auth.LoginRequest;
+import com.vn.smart_space.dto.request.auth.RefreshTokenRequest;
+import com.vn.smart_space.dto.response.IntrospectResponse;
+import com.vn.smart_space.dto.response.auth.LoginResponse;
+import com.vn.smart_space.exception.BadRequestException;
+import com.vn.smart_space.exception.UnauthorizedException;
+import com.vn.smart_space.mapper.UserMapper;
+import com.vn.smart_space.model.InvalidatedToken;
+import com.vn.smart_space.model.User;
 import com.vn.smart_space.repository.InvalidatedTokenRepository;
 import com.vn.smart_space.repository.UserRepository;
 import com.vn.smart_space.service.jwt.IJwtService;
 import com.vn.smart_space.service.mail.IMailService;
+import com.vn.smart_space.utils.OtpGenerator;
 
 import lombok.RequiredArgsConstructor;
 
@@ -57,6 +56,8 @@ public class AuthenticationService implements IAuthenticationService {
     private final PasswordEncoder passwordEncoder;
 
     private final StringRedisTemplate stringRedisTemplate;
+
+    private final UserMapper userMapper;
 
     @Value("${google.client-id}")
     private String googleClientId;
@@ -96,15 +97,20 @@ public class AuthenticationService implements IAuthenticationService {
             throw new BadRequestException("Email hoặc mật khẩu không chính xác");
         }
 
-        // Generate Token
+        // Generate Access Token
         TokenPayload accessToken = jwtService.generateAccessToken(user);
-        TokenPayload refreshToken = jwtService.generateRefreshToken(user);
+
+        // Generate Refresh Token
+        boolean rememberMe = Boolean.TRUE.equals(request.getRememberMe());
+        TokenPayload refreshToken = jwtService.generateRefreshToken(user, rememberMe);
 
         saveRefreshTokenToRedis(user.getId(), refreshToken);
 
         return LoginResponse.builder()
                 .accessToken(accessToken.getToken())
                 .refreshToken(refreshToken.getToken())
+                .registrationStatus(determineRegistrationStatus(user))
+                .user(userMapper.toUserResponse(user))
                 .build();
     }
 
@@ -140,20 +146,22 @@ public class AuthenticationService implements IAuthenticationService {
                     User newUser = User.builder()
                             .email(email)
                             .fullName(fullName != null ? fullName : email.split("@")[0])
-                            .role(ERole.USER)
-                            .status(EUserStatus.ACTIVE)
+                            .role(ERole.client)
+                            .status(EUserStatus.active)
                             .build();
                     return userRepository.save(newUser);
                 });
 
         // Generate JWT tokens
         TokenPayload accessToken = jwtService.generateAccessToken(user);
-        TokenPayload refreshToken = jwtService.generateRefreshToken(user);
+        TokenPayload refreshToken = jwtService.generateRefreshToken(user, true);
         saveRefreshTokenToRedis(user.getId(), refreshToken);
 
         return LoginResponse.builder()
                 .accessToken(accessToken.getToken())
                 .refreshToken(refreshToken.getToken())
+                .registrationStatus(determineRegistrationStatus(user))
+                .user(userMapper.toUserResponse(user))
                 .build();
     }
 
@@ -190,7 +198,7 @@ public class AuthenticationService implements IAuthenticationService {
     @Override
     @Transactional
     public LoginResponse refreshToken(RefreshTokenRequest request) {
-        String refreshToken = request.getToken();
+        String refreshToken = request.getRefreshToken();
 
         SignedJWT signedJWT = jwtService.verifyToken(refreshToken);
         try {
@@ -216,57 +224,58 @@ public class AuthenticationService implements IAuthenticationService {
             }
             TokenPayload newAccessToken = jwtService
                     .generateAccessToken(user);
+
+            Boolean rememberMe = (Boolean) signedJWT.getJWTClaimsSet().getClaim("rememberMe");
+            boolean isRememberMe = Boolean.TRUE.equals(rememberMe);
             TokenPayload newRefreshToken = jwtService
-                    .generateRefreshToken(user);
+                    .generateRefreshToken(user, isRememberMe);
 
             saveRefreshTokenToRedis(user.getId(), newRefreshToken);
             return LoginResponse.builder()
                     .accessToken(newAccessToken.getToken())
                     .refreshToken(newRefreshToken.getToken())
+                    .registrationStatus(determineRegistrationStatus(user))
+                    .user(userMapper.toUserResponse(user))
                     .build();
         } catch (ParseException e) {
             throw new UnauthorizedException("Token không hợp lệ");
         }
     }
 
-    // Send OTP
+    // SEND OTP FOR REGISTRATION
     @Override
     @Transactional
-    public void sendOtp(SendOtpRequest request) {
-        String email = request.getEmail();
-        EOtpPurpose purpose = request.getPurpose();
-
-        if (purpose == EOtpPurpose.FORGOT_PASSWORD) {
-            userRepository.findByEmail(email)
-                    .orElseThrow(() -> new BadRequestException("Email không tồn tại trong hệ thống"));
-        }
-        if (purpose == EOtpPurpose.REGISTER && userRepository.findByEmail(email).isPresent()) {
+    public void sendOtpRegister(String email) {
+        if (userRepository.findByEmail(email).isPresent()) {
             throw new BadRequestException("Email đã tồn tại trong hệ thống");
         }
+        sendOtp(email, "otp:register:", "cooldown:otp:");
+    }
 
-        // Rate Limit
-        String cooldownKey = "cooldown:otp:" + email;
-        if (Boolean.TRUE.equals(stringRedisTemplate.hasKey(cooldownKey))) {
-            throw new BadRequestException("Vui lòng đợi 60 giây trước khi gửi lại OTP");
+    // Send OTP Forgot password
+    @Override
+    public void sendOtpForgotPassword(String email) {
+        if (userRepository.findByEmail(email).isEmpty()) {
+            throw new BadRequestException("Email không tồn tại trong hệ thống");
         }
+        sendOtp(email, "otp:forgot_password:", "cooldown:otp_forgot:");
+    }
 
-        // Generate OTP
-        String otp = String.format("%06d", new SecureRandom().nextInt(1_000_000));
+    @Override
+    @Transactional
+    public void verifyOtpRegister(String email, String otp) {
 
-        // Save OTP to Redis Hash
-        String otpKey = "otp:" + email;
-        Map<String, String> otpData = Map.of(
-                "otp", otp,
-                "attempts", "0",
-                "purpose", purpose.name());
-        stringRedisTemplate.opsForHash().putAll(otpKey, otpData);
-        stringRedisTemplate.expire(otpKey, Duration.ofMinutes(5));
+        String otpKey = "otp:register:" + email;
+        verifyOtp(otpKey, otp);
 
-        // Set cooldown 60s
-        stringRedisTemplate.opsForValue().set(cooldownKey, "1", Duration.ofSeconds(60));
+        String verifiedKey = "otp_verified:register:" + email;
+        stringRedisTemplate.opsForValue().set(verifiedKey, "true", Duration.ofMinutes(10));
 
-        // Send OTP email
-        mailService.sendOtpEmail(email, otp);
+    }
+
+    @Override
+    public void verifyOtpForgotPassword(String otpKey, String otp) {
+        verifyOtp(otpKey, otp);
     }
 
     @Override
@@ -281,11 +290,34 @@ public class AuthenticationService implements IAuthenticationService {
     }
 
     @Override
-    public void verifyOtp(String email, String inputOtp, EOtpPurpose expectedPurpose, EOtpPurpose actualPurpose) {
-        if (actualPurpose != expectedPurpose) {
-            throw new BadRequestException("Mục đích sử dụng OTP không hợp lệ");
+    public ERegistrationStatus determineRegistrationStatus(User user) {
+        if (user.getPhone() != null && !user.getPhone().isBlank()) {
+            return ERegistrationStatus.complete;
         }
-        String otpKey = "otp:" + email;
+        return ERegistrationStatus.incomplete;
+    }
+
+    private void sendOtp(String email, String otpKeyPrefix, String cooldownKeyPrefix) {
+        String cooldownKey = cooldownKeyPrefix + email;
+        if (Boolean.TRUE.equals(stringRedisTemplate.hasKey(cooldownKey))) {
+            throw new BadRequestException("Vui lòng đợi 60 giây trước khi gửi lại OTP");
+        }
+
+        String otp = OtpGenerator.generateOtp();
+        // Save OTP to Redis
+        String otpKey = otpKeyPrefix + email;
+        Map<String, String> otpData = Map.of(
+                "otp", otp,
+                "attempts", "0");
+        stringRedisTemplate.opsForHash().putAll(otpKey, otpData);
+        stringRedisTemplate.expire(otpKey, Duration.ofMinutes(5));
+        // Set cooldown 60s
+        stringRedisTemplate.opsForValue().set(cooldownKey, "1", Duration.ofSeconds(60));
+        // Send OTP email
+        mailService.sendOtpEmail(email, otp);
+    }
+
+    private void verifyOtp(String otpKey, String otp) {
         // Check OTP is exists
         Boolean exists = stringRedisTemplate.hasKey(otpKey);
 
@@ -317,7 +349,7 @@ public class AuthenticationService implements IAuthenticationService {
         }
 
         // OTP Not Match
-        if (!savedOtp.equals(inputOtp)) {
+        if (!savedOtp.equals(otp)) {
 
             Long newAttempts = stringRedisTemplate
                     .opsForHash()
