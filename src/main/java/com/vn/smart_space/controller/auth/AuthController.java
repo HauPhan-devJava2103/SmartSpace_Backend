@@ -1,4 +1,4 @@
-package com.vn.smart_space.controller.Auth;
+package com.vn.smart_space.controller.auth;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -19,6 +19,7 @@ import com.vn.smart_space.dto.request.auth.RefreshTokenRequest;
 import com.vn.smart_space.dto.request.auth.RegisterRequest;
 import com.vn.smart_space.dto.request.auth.ResetPasswordRequest;
 import com.vn.smart_space.dto.request.auth.VerifyOTPRegisterRequest;
+import com.vn.smart_space.dto.request.user.ChangePasswordRequest;
 import com.vn.smart_space.dto.request.user.UpdateProfileRequest;
 import com.vn.smart_space.dto.response.auth.LoginResponse;
 import com.vn.smart_space.dto.response.user.UserResponse;
@@ -137,7 +138,7 @@ public class AuthController {
                 return ResponseEntity.ok(ApiResponse.success("Developer account created successfully", null));
         }
 
-        e Password
+        // Change Password
         @PutMapping("/change-password")
         public ResponseEntity<ApiResponse> changePassword(
                         @AuthenticationPrincipal Jwt jwt,
