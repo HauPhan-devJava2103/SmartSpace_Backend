@@ -20,7 +20,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void configureMessageBroker(MessageBrokerRegistry registry) {
 
         // Broker Prefix
-        registry.enableSimpleBroker("/topic", "/queue");
+        registry.enableSimpleBroker("/topic", "/queue")
+                .setHeartbeatValue(new long[]{10000, 10000});
 
         // Application Prefix
         registry.setApplicationDestinationPrefixes("/smartspace");
