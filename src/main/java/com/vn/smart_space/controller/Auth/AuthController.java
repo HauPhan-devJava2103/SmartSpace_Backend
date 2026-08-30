@@ -137,4 +137,13 @@ public class AuthController {
                 return ResponseEntity.ok(ApiResponse.success("Developer account created successfully", null));
         }
 
+        e Password
+        @PutMapping("/change-password")
+        public ResponseEntity<ApiResponse> changePassword(
+                        @AuthenticationPrincipal Jwt jwt,
+                        @RequestBody @Valid ChangePasswordRequest request) {
+                userService.changePassword(jwt.getSubject(), request);
+                return ResponseEntity.ok(ApiResponse.success("Change password successfully", null));
+        }
+
 }
