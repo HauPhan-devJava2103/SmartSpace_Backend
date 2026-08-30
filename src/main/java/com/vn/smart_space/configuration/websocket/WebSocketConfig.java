@@ -9,18 +9,30 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+
 @Configuration
 @EnableWebSocketMessageBroker
 @RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private final JwtChannelInterceptor jwtChannelInterceptor;
+    private TaskScheduler messageBrokerTaskScheduler;
+
+    @Autowired
+    public void setMessageBrokerTaskScheduler(@Lazy TaskScheduler taskScheduler) {
+        this.messageBrokerTaskScheduler = taskScheduler;
+    }
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
 
         // Broker Prefix
-        registry.enableSimpleBroker("/topic", "/queue");
+        registry.enableSimpleBroker("/topic", "/queue")
+                .setHeartbeatValue(new long[]{10000, 10000})
+                .setTaskScheduler(this.messageBrokerTaskScheduler);
 
         // Application Prefix
         registry.setApplicationDestinationPrefixes("/smartspace");
